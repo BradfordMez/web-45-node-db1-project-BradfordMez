@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   checkAccountPayload,
   checkAccountId,
+  checkAccountNameUnique,
 } = require("./accounts-middleware");
 
 router.get("/", (req, res) => {
@@ -21,13 +22,19 @@ router.get("/:id", checkAccountId, (req, res) => {
   res.json(req.account);
 });
 
-router.post("/", checkAccountPayload, (req, res, next) => {
-  Accounts.create({ name: req.body.name, budget: req.body.budget })
-    .then((account) => {
-      res.status(201).json(account);
-    })
-    .catch(next);
-});
+router.post(
+  "/",
+  checkAccountPayload,
+  checkAccountNameUnique,
+  async (req, res, next) => {
+    try {
+      const newAccount = await Accounts.create(req.body);
+      res.status(201).json(newAccount);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.put("/:id", checkAccountId, checkAccountPayload, (req, res, next) => {
   Accounts.updateById(req.params.id, req.body)
